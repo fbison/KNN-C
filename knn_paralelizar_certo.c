@@ -8,7 +8,7 @@
 
 #include <omp.h>
 
-double get_time_in_seconds() {
+double obterTempoEmSegundos() {
     LARGE_INTEGER frequency, start;
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start);
@@ -191,13 +191,13 @@ void knn(const char* nomeConjunto, double **matrizTrain, int linhasTrain, double
     double tempo_total;
 
     // Início da contagem de tempo
-    inicio = get_time_in_seconds();
+    inicio = obterTempoEmSegundos();
 
     int linhasTest;
     double **matrizTest = criar_matriz(xTest, tamanhoTest, largura, altura, &linhasTest);
     double *yTest = criar_YTest(matrizTrain, linhasTrain, matrizTest, linhasTest, yTrain, largura, k);
 
-    fim = get_time_in_seconds();
+    fim = obterTempoEmSegundos();
     tempo_total = ((double)(fim - inicio));
     printf("Tempo total de execução do teste %s: %.20f segundos\n", nomeConjunto, tempo_total);
     

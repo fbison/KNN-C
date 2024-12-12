@@ -6,7 +6,7 @@
 
 #include <windows.h>
 
-double get_time_in_seconds() {
+double obterTempoEmSegundos() {
     LARGE_INTEGER frequency, start;
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start);
@@ -79,7 +79,8 @@ double **criar_matriz(double *dados, int tamanho, int largura, int altura, int *
 }
 
 // Função para calcular o vetor de distâncias
-void calcular_distancias(double **matriz_treino, int linhas_treino, int largura, double *linha_teste, int n, double *distancias) {
+void calcular_distancias(double **matriz_treino, int linhas_treino, int largura, 
+                                double *linha_teste, int n, double *distancias) {
     for (int i = 0; i < n; i++) {
         double soma = 0.0;
         for (int j = 0; j < largura; j++) {
@@ -89,6 +90,9 @@ void calcular_distancias(double **matriz_treino, int linhas_treino, int largura,
         distancias[i] = soma;
     }
 }
+
+
+
 
 // Função para encontrar os índices das k menores distâncias
 void encontrar_k_menores(double *distancias, int n, int k, int *indices) {
@@ -107,13 +111,15 @@ void encontrar_k_menores(double *distancias, int n, int k, int *indices) {
 }
 
 // Função para calcular o vetor YTest
-double * criar_YTest(double **matriz_treino, int linhas_treino, double **matriz_teste, int linhas_teste, double *y_treino, int largura, int k) {
+double * criar_YTest(double **matriz_treino, int linhas_treino, double **matriz_teste, 
+                    int linhas_teste, double *y_treino, int largura, int k) {
     double *y_teste = (double *)malloc(linhas_teste * sizeof(double));
     for (int i = 0; i < linhas_teste; i++) {
         double *linha_teste = matriz_teste[i];
         double *distancias = (double *)malloc(linhas_treino * sizeof(double));
 
-        calcular_distancias(matriz_treino, linhas_treino, largura, linha_teste, linhas_treino, distancias);
+        calcular_distancias(matriz_treino, linhas_treino, largura,
+                                linha_teste, linhas_treino, distancias);
 
         int *indices = (int *)malloc(k * sizeof(int));
         encontrar_k_menores(distancias, linhas_treino, k, indices);
@@ -131,15 +137,18 @@ double * criar_YTest(double **matriz_treino, int linhas_treino, double **matriz_
 }
 
 // Função para calcular o erro absoluto médio
-double calcular_erro_absoluto_medio(double *xTest, double *y_previsto, int tamanhoXTest, int largura, int altura) {
+double calcular_erro_absoluto_medio(double *xTest, double *y_previsto, 
+                                int tamanhoXTest, int largura, int altura) {
     double soma = 0.0;
 
-for (int i = 0; i < tamanhoXTest; i++) {
-    soma += fabs(xTest[i + largura + altura] - y_previsto[i]);
-}
+    for (int i = 0; i < tamanhoXTest; i++) {
+        soma += fabs(xTest[i + largura + altura] - y_previsto[i]);
+    }
 
     return soma / tamanhoXTest;
 }
+
+
 
 void salvar_YTest_em_arquivo(const char *nome_arquivo, double *yTest, int tamanho) {
     FILE *arquivo = fopen(nome_arquivo, "w");
@@ -155,43 +164,47 @@ void salvar_YTest_em_arquivo(const char *nome_arquivo, double *yTest, int tamanh
     fclose(arquivo);
     printf("Resultados de yTest salvos em '%s'.\n", nome_arquivo);
 }
+
 char* nomeArquivoY(const char* nomeConjunto){
     char *ptr = NULL;
     char *nomeArquivoY = strdup(nomeConjunto); // Copiar a string original
     if ((ptr = strstr(nomeArquivoY, "xtest"))) memcpy(ptr, "yTest", 5);
+    //trocar a ocorrencia de xTest no nome do arquivo por yTest
     return nomeArquivoY;
 }
+
+
 // Função principal do algoritmo KNN
-void knn(const char* nomeConjunto, double **matrizTrain, int linhasTrain, double *yTrain, int tamanhoTrain, double *xTest, int tamanhoTest, int largura, int altura, int k) {
+void knn(const char* nomeConjunto, double **matrizTrain, int linhasTrain, double *yTrain,
+                int tamanhoTrain, double *xTest, int tamanhoTest, int largura, int altura, int k) {
         
     // Variáveis para medição do tempo
     double inicio, fim;
     double tempo_total;
-
-    // Início da contagem de tempo
-    inicio = get_time_in_seconds();
+    
+    inicio = obterTempoEmSegundos(); // Início da contagem de tempo
 
     int linhasTest;
     double **matrizTest = criar_matriz(xTest, tamanhoTest, largura, altura, &linhasTest);
     double *yTest = criar_YTest(matrizTrain, linhasTrain, matrizTest, linhasTest, yTrain, largura, k);
 
-    fim = get_time_in_seconds();
+    fim = obterTempoEmSegundos(); // Fim da contagem de tempo
+    
     tempo_total = ((double)(fim - inicio));
     printf("Tempo total de execução do teste %s: %.20f segundos\n", nomeConjunto, tempo_total);
     
     salvar_YTest_em_arquivo(nomeArquivoY(nomeConjunto), yTest, linhasTest);
 
     double erro = calcular_erro_absoluto_medio(xTest, yTest, linhasTest, largura, altura);
-    
     printf("Erro absoluto médio do conjunto de dados %s: %f\n", nomeConjunto, erro);
 
     for (int i = 0; i < linhasTest; i++) free(matrizTest[i]);
     free(matrizTest);
     free(yTest);
-
-
 }
 
+
+//Função para criar yTreino 
 double* criar_yTreino(double* xTrain, int linhasTrain, int largura, int altura){
     double *yTrain = (double *)malloc(linhasTrain * sizeof(double));
     for (int i = 0; i < linhasTrain; i++) {
@@ -200,11 +213,32 @@ double* criar_yTreino(double* xTrain, int linhasTrain, int largura, int altura){
     return yTrain;
 }
 
-// Função main para executar o código
-int main() {
+int main(int argc, char *argv[])
+{
+    if (argc != 4) //o nome do programa é um argumento
+    {
+        fprintf(stderr, "Formato de compilação: <programa> <largura> <altura> <k>\n");
+        return EXIT_FAILURE;
+    }
+
     double *xTrain, *xTest;
     int tamanhoTrain, tamanhoTest;
-    int linhasTrain=0, largura = 3, altura = 1, k = 2;
+    int linhasTrain = 0;
+
+    // Obtém os valores de largura, altura e k a partir dos argumentos
+    // E converte para inteiros
+    int largura = atoi(argv[1]); 
+    int altura = atoi(argv[2]);  
+    int k = atoi(argv[3]);
+
+    // Verificação adicional para valores inválidos
+    if (largura <= 0 || altura <= 0 || k <= 0)
+    {
+        fprintf(stderr, "Erro: largura, altura e k devem ser números inteiros positivos.\n");
+        return EXIT_FAILURE;
+    }
+
+
     const char *nomesArquivosTest[] = {
         "dados_xtest_10.txt",
         "dados_xtest_30.txt",
@@ -229,16 +263,16 @@ int main() {
         // Lê o arquivo atual
         ler_arquivo(nomesArquivosTest[i], &xTest, &tamanhoTest);
 
-        knn(nomesArquivosTest[i], matrizTrain, linhasTrain, yTrain, tamanhoTrain, xTest, tamanhoTest, largura, altura, k);
+        knn(nomesArquivosTest[i], matrizTrain, linhasTrain, yTrain, tamanhoTrain,
+            xTest, tamanhoTest, largura, altura, k);
 
         
-        free(xTest); // Libera a memória alocada para xTest
+        free(xTest); // Libera a memória alocada para xTest, pois ele é reiniciado no for
     }
 
     for (int i = 0; i < linhasTrain; i++) free(matrizTrain[i]);
     free(matrizTrain);
     free(yTrain);
     free(xTrain);
-    scanf("%d", &largura);
     return 0;
 }
